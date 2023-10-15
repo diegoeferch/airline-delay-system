@@ -1,0 +1,6 @@
+.venv
+__MACOSX
+.idea
+
+__pycache__/
+*.pyc
