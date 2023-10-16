@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import Tuple, Union, List, Any
 
 
-
 def scale(
         target: pd.DataFrame
 ) -> float:
@@ -57,7 +56,7 @@ class DelayModel:
     ):
         self._model = None  # Model should be saved in this attribute.
         self._scale = None  # Scale factor
-        self._target = None # Target labels (just in case)
+        self._target = None  # Target labels (just in case)
 
     def preprocess(
             self,
@@ -83,10 +82,8 @@ class DelayModel:
             axis=1
         )[self.TOP_FEATURES]
 
-        self._target = self._get_target(data)
-        self._scale = scale(self._target)
-
         if target_column is not None:
+            self._target = self._get_target(data)
             return features, self._target.rename(columns={"y": target_column})
 
         return features
@@ -122,7 +119,6 @@ class DelayModel:
         self._build_model()
         return self._model.predict(features).tolist()
 
-
     def _get_target(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         It calculates the target variable for the delay prediction model based on the time difference between two
@@ -132,7 +128,9 @@ class DelayModel:
         """
         data['min_diff'] = data.apply(get_min_diff, axis=1)
         target = np.where(data['min_diff'] > self.THRESHOLD_IN_MINUTES, 1, 0)
-        return pd.DataFrame({"y": target})
+        target = pd.DataFrame({"y": target})
+        self._scale = scale(target)
+        return target
 
     def _build_model(self) -> None:
         if self._model is None:
