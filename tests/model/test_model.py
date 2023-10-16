@@ -1,14 +1,15 @@
 import unittest
 import pandas as pd
+from pathlib import Path
 
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from challenge.model import DelayModel
 
-class TestModel(unittest.TestCase):
 
+class TestModel(unittest.TestCase):
     FEATURES_COLS = [
-        "OPERA_Latin American Wings", 
+        "OPERA_Latin American Wings",
         "MES_7",
         "MES_10",
         "OPERA_Grupo LATAM",
@@ -24,15 +25,15 @@ class TestModel(unittest.TestCase):
         "delay"
     ]
 
+    DATA_PATH = str(Path(Path(__file__).parent.parent.parent, 'data', 'data.csv'))
 
     def setUp(self) -> None:
         super().setUp()
         self.model = DelayModel()
-        self.data = pd.read_csv(filepath_or_buffer="../data/data.csv")
-        
+        self.data = pd.read_csv(filepath_or_buffer=self.DATA_PATH)
 
     def test_model_preprocess_for_training(
-        self
+            self
     ):
         features, target = self.model.preprocess(
             data=self.data,
@@ -47,9 +48,8 @@ class TestModel(unittest.TestCase):
         assert target.shape[1] == len(self.TARGET_COL)
         assert set(target.columns) == set(self.TARGET_COL)
 
-
     def test_model_preprocess_for_serving(
-        self
+            self
     ):
         features = self.model.preprocess(
             data=self.data
@@ -59,20 +59,20 @@ class TestModel(unittest.TestCase):
         assert features.shape[1] == len(self.FEATURES_COLS)
         assert set(features.columns) == set(self.FEATURES_COLS)
 
-
     def test_model_fit(
-        self
+            self
     ):
         features, target = self.model.preprocess(
             data=self.data,
             target_column="delay"
         )
 
-        _, features_validation, _, target_validation = train_test_split(features, target, test_size = 0.33, random_state = 42)
+        f_train, features_validation, t_train, target_validation = train_test_split(features, target, test_size=0.33,
+                                                                                    random_state=42)
 
         self.model.fit(
-            features=features,
-            target=target
+            features=f_train,
+            target=t_train
         )
 
         predicted_target = self.model._model.predict(
@@ -80,19 +80,22 @@ class TestModel(unittest.TestCase):
         )
 
         report = classification_report(target_validation, predicted_target, output_dict=True)
-        
+        print(report)
+
         assert report["0"]["recall"] < 0.60
         assert report["0"]["f1-score"] < 0.70
         assert report["1"]["recall"] > 0.60
         assert report["1"]["f1-score"] > 0.30
 
-
     def test_model_predict(
-        self
+            self
     ):
-        features = self.model.preprocess(
-            data=self.data
+        features, target = self.model.preprocess(
+            data=self.data,
+            target_column='delay'
         )
+
+        self.model.fit(features=features, target=target)
 
         predicted_targets = self.model.predict(
             features=features
